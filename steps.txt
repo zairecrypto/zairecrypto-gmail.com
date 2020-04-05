@@ -1,0 +1,142 @@
+1. add the phoenix_live_view library > run mix deps.get
+    - open file mix.exs
+
+defp deps do
+[
+  {:phoenix, "~> 1.4.11"},
+	...
+  {:phoenix_live_view, "~> 0.6.0"} # or {:phoenix_live_view, github: "phoenixframework/phoenix_live_view"}
+]
+end
+
+2. Signing Salt, update the endpoint configuration
+    - generate a new Salt
+    - open file config/config.exs
+
+mix phx.gen.secret 32
+
+config :gallery, GalleryWeb.Endpoint,
+  ...
+  live_view: [
+    signing_salt: "LIlgBfJ9j7xLJ6Almy982/ZydK/9y0vd"
+  ]
+
+3. add the LiveView Flash plug to our :browser pipeline
+    - open file lib/gallery_web/router.ex
+
+pipeline :browser do
+  ...
+  plug :fetch_flash
+  plug Phoenix.LiveView.Flash
+  ...
+end
+
+4. Add imports to controller, view and router functions
+    - open file lib/gallery_web.ex
+    
+def controller do
+  quote do
+    ...	
+    import Phoenix.LiveView.Controller
+  end
+end
+
+def view do
+  quote do
+    ...
+    import Phoenix.LiveView.Helpers
+  end
+end
+
+def router do
+  quote do
+    ...
+    import Phoenix.LiveView.Router
+  end
+end
+
+5. expose a new socket for LiveView updates in the endpoint module to send updates and receive events.
+    - open lib/gallery_web/endpoint.ex
+
+defmodule GalleryWeb.Endpoint do
+  use Phoenix.Endpoint, otp_app: :gallery
+  	
+  socket "/live", Phoenix.LiveView.Socket
+  ...
+end
+
+6. check client side
+    - check we have the CSRF meta tag inside the <head> tag
+    - open file lib/gallery_web/templates/layout/app.html.eex
+    
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <%= csrf_meta_tag() %>
+    ...
+  </head>
+  ...
+</html>
+
+    - then we add the LiveView JavaScript library
+    - open file assets/package.json
+    ! this library run on the browser
+    ! updates the DOM
+    ! manages events while talking with the LiveView process on the server.
+    
+{
+  "dependencies": {
+    ...
+    "phoenix_live_view": "file:../deps/phoenix_live_view"
+  }
+}
+
+7. install the new javascript dependency
+    - run npm install --prefix assets
+
+8. add five lines of javascript code in
+    - open file assets/js/app.js
+
+import {Socket} from "phoenix"
+import LiveSocket from "phoenix_live_view"
+
+let csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content");
+
+let liveSocket = new LiveSocket("/live", Socket, {params: {_csrf_token: csrfToken}})
+liveSocket.connect()
+
+9. import the default LiveView CSS
+    - assets/css/app.css
+
+@import "../../deps/phoenix_live_view/assets/css/live_view.css";
+
+
+TEST IF EVERYTHING IS WORKING FINE??
+
+1. Create folder live 
+    - path lib/gallery_web/live
+    - create file gallery_live.ex
+        + GalleryWeb.GalleryLive module : our LiveView page
+
+defmodule GalleryWeb.GalleryLive do
+  use Phoenix.LiveView
+
+  def mount(_params, _session, socket) do
+    {:ok, socket}
+  end
+
+  def render(assigns) do
+    ~L"""
+    <h1>LiveView is awesome!</h1>
+    """
+  end
+end
+
+2. add a live route in our router 
+    - open file ib/gallery_web/router.ex
+
+scope "/", GalleryWeb do
+    ...   
+    live "/gallery", GalleryLive  
+end
