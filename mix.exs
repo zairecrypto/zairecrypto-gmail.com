@@ -38,7 +38,9 @@ defmodule Gallery.Mixfile do
       {:phoenix_live_reload, "~> 1.0", only: :dev},
       {:gettext, "~> 0.11"},
       {:cowboy, "~> 1.0"}, 
-      {:phoenix_live_view, github: "phoenixframework/phoenix_live_view"}, # or {:phoenix_live_view, "~> 0.6.0"}
+      # {:phoenix_live_view, github: "phoenixframework/phoenix_live_view"}, # or {:phoenix_live_view, "~> 0.6.0"}
+      {:phoenix_live_view, "~> 0.10.0"},
+      {:floki, ">= 0.0.0", only: :test}
     ]
   end
 end
